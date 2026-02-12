@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrueChats Pro Live</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --wa-green: #075e54; --bg: #e5ddd5; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: sans-serif; }
+        body { background: #d1d7db; height: 100vh; display: flex; }
+        #app { display: flex; width: 100%; height: 100%; background: #fff; }
+        .sidebar { width: 35%; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .chat-area { width: 65%; display: flex; flex-direction: column; background: var(--bg); }
+        .header { background: var(--wa-green); color: white; padding: 15px; display: flex; justify-content: space-between; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 70%; font-size: 14px; }
+        .sent { align-self: flex-end; background: #dcf8c6; }
+        .recv { align-self: flex-start; background: #fff; }
+        .input-bar { padding: 10px; background: #f0f0f0; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        button { background: var(--wa-green); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+        .overlay { position: fixed; inset:0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; color: white; }
+    </style>
+</head>
+<body>
+    <div id="login-screen" class="overlay">
+        <div style="background: white; color: black; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px;">
+            <h3>Verify Phone</h3><br>
+            <div id="recaptcha-container"></div>
+            <input type="tel" id="phone" placeholder="+919876543210" style="width: 100%;"><br><br>
+            <button onclick="sendOTP()" style="width: 100%;">Send OTP</button>
+            <div id="otp-box" style="display:none; margin-top: 15px;">
+                <input type="text" id="otp" placeholder="Enter OTP" style="width: 100%;"><br><br>
+                <button onclick="verifyOTP()" style="width: 100%;">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" style="display:none;">
+        <div class="sidebar">
+            <div class="header">TrueChats <button onclick="syncContacts()">🔄</button></div>
+            <div style="padding: 10px;"><input type="text" id="direct-num" placeholder="Direct Chat Number"><button onclick="startDirect()">Go</button></div>
+            <div id="contact-list"></div>
+        </div>
+        <div class="chat-area">
+            <div class="header"><span id="chat-with">Select Contact</span> <button onclick="makeCall()">📞</button></div>
+            <div id="messages"></div>
+            <div class="input-bar"><input type="text" id="msg-input" placeholder="Type a message..."><button onclick="sendMsg()">➤</button></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAsCm1YcsAjHwyvIzxyMrBmZPLw2hlo18",
+            authDomain: "truechats-8dac9.firebaseapp.com",
+            projectId: "truechats-8dac9",
+            appId: "1:685374771914:web:81bf491264c1bb09061a33"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        let myPhone, targetPhone, peer;
+
+        function sendOTP() {
+            const num = document.getElementById('phone').value;
+            const verifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
+            firebase.auth().signInWithPhoneNumber(num, verifier).then(res => {
+                window.confirmationResult = res;
+                document.getElementById('otp-box').style.display = 'block';
+            });
+        }
+
+        function verifyOTP() {
+            const code = document.getElementById('otp').value;
+            confirmationResult.confirm(code).then(res => {
+                myPhone = res.user.phoneNumber;
+                initApp();
+            });
+        }
+
+        function initApp() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            peer = new Peer(myPhone.replace('+', ''));
+            // Handle calls
+            peer.on('call', call => {
+                if(confirm("Incoming call...")) {
+                    navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+                        call.answer(stream);
+                        call.on('stream', s => { const a = new Audio(); a.srcObject = s; a.play(); });
+                    });
+                }
+            });
+        }
+
+        async function syncContacts() {
+            if('contacts' in navigator) {
+                const contacts = await navigator.contacts.select(['name', 'tel'], {multiple:true});
+                // Logic to display contacts
+            } else { alert("Sync not supported on this browser."); }
+        }
+
+        function startDirect() {
+            targetPhone = document.getElementById('direct-num').value;
+            document.getElementById('chat-with').innerText = targetPhone;
+        }
+
+        function sendMsg() {
+            const text = document.getElementById('msg-input').value;
+            if(!text || !targetPhone) return;
+            appendMessage(text, 'sent');
+            // Backend API call here
+            document.getElementById('msg-input').value = "";
+        }
+
+        function appendMessage(t, type) {
+            const d = document.createElement('div');
+            d.className = `msg ${type}`;
+            d.innerText = t;
+            document.getElementById('messages').appendChild(d);
+        }
+
+        function makeCall() {
+            navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+                const call = peer.call(targetPhone.replace('+', ''), stream);
+                call.on('stream', s => { const a = new Audio(); a.srcObject = s; a.play(); });
+            });
+        }
+    </script>
+</body>
+</html>
