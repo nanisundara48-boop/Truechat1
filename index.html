@@ -3,172 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TrueChats Elite</title>
+    <title>TrueChats Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
-        :root {
-            --primary: #00f2ff;
-            --bg: #050510;
-            --glass: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #e0e0e0;
-        }
+        :root { --primary: #00a884; --bg: #e5ddd5; --header: #008069; --incoming: #ffffff; --outgoing: #d9fdd3; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Helvetica, Arial, sans-serif; }
+        body { background: #d1d7db; height: 100vh; display: flex; justify-content: center; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
-        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+        #app-root { width: 100%; height: 100%; max-width: 100%; background: white; display: flex; position: relative; overflow: hidden; }
 
         /* Login Screen */
-        #auth-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1a1a2e, #000);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+        #login-view {
+            position: fixed; inset: 0; background: #f0f2f5; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .neon-box {
-            padding: 30px; background: var(--glass); border: 1px solid var(--primary);
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); border-radius: 15px; text-align: center;
-            backdrop-filter: blur(10px); width: 90%; max-width: 400px;
+        .login-card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
+        .google-btn {
+            background: #fff; border: 1px solid #ddd; padding: 12px; width: 100%; border-radius: 5px;
+            display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+            font-weight: bold; color: #555; transition: 0.2s; margin-top: 20px;
         }
-        input {
-            width: 100%; padding: 15px; margin: 10px 0; background: rgba(0,0,0,0.5);
-            border: 1px solid var(--border); color: var(--primary); outline: none; border-radius: 8px;
-        }
-        button {
-            width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: bold;
-            border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
-        }
-        button:hover { box-shadow: 0 0 15px var(--primary); }
+        .google-btn:hover { background: #f7f7f7; }
 
-        /* Main App Layout */
-        #app-screen { display: none; height: 100%; display: flex; }
+        /* Sidebar */
+        .sidebar { width: 35%; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; background: white; }
+        .main-header { background: #f0f2f5; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-right: 1px solid #d1d7db; height: 60px; }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .my-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
         
-        /* Sidebar (Contacts) */
-        .sidebar {
-            width: 350px; background: rgba(10, 10, 20, 0.95); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-        }
-        .header {
-            padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
-        }
-        .logo { font-size: 24px; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
-        
-        .tabs { display: flex; padding: 10px; gap: 10px; }
-        .tab-btn { flex: 1; background: transparent; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 5px; }
-        .tab-btn.active { background: var(--primary); color: #000; }
+        .search-bar { padding: 8px 12px; background: white; border-bottom: 1px solid #f0f2f5; }
+        .search-input { width: 100%; padding: 8px; background: #f0f2f5; border: none; border-radius: 8px; outline: none; }
 
-        #contact-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .contact-card {
-            padding: 15px; margin-bottom: 10px; background: var(--glass); border-radius: 10px;
-            cursor: pointer; display: flex; align-items: center; gap: 15px; border: 1px solid transparent;
-        }
-        .contact-card:hover { border-color: var(--primary); }
-        .avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #00f2ff, #0066ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; }
+        #contacts-list { flex: 1; overflow-y: auto; }
+        .contact-item { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
+        .contact-item:hover { background: #f5f5f5; }
+        .contact-info h4 { font-size: 16px; font-weight: normal; color: #111; }
+        .contact-info p { font-size: 13px; color: #666; margin-top: 2px; }
 
         /* Chat Area */
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at center, #111, #000); position: relative; }
-        .chat-header {
-            padding: 15px; background: rgba(0,0,0,0.8); border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+        .chat-header { background: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 15px; height: 60px; border-bottom: 1px solid #d1d7db; }
+        .messages-container { 
+            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; 
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
         }
-        #messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         
-        .msg {
-            max-width: 70%; padding: 12px 18px; border-radius: 15px; font-size: 14px; position: relative;
-            animation: fadeIn 0.3s ease;
+        .message-bubble { 
+            max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14.2px; line-height: 19px; 
+            position: relative; margin-bottom: 8px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
         }
-        .sent { align-self: flex-end; background: linear-gradient(135deg, #0066ff, #00f2ff); color: #000; border-bottom-right-radius: 2px; }
-        .received { align-self: flex-start; background: rgba(255,255,255,0.1); color: #fff; border-bottom-left-radius: 2px; }
-        
-        .input-area { padding: 20px; background: rgba(0,0,0,0.9); display: flex; gap: 15px; align-items: center; }
+        .sent { align-self: flex-end; background: var(--outgoing); border-top-right-radius: 0; }
+        .received { align-self: flex-start; background: var(--incoming); border-top-left-radius: 0; }
+        .msg-time { font-size: 11px; color: #999; text-align: right; margin-top: 4px; }
 
-        /* Privacy Lock Overlay */
-        #privacy-lock {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
-            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
-        }
+        .input-area { padding: 10px 16px; background: #f0f2f5; display: flex; align-items: center; gap: 10px; }
+        .msg-input { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; background: white; }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
-            .sidebar { width: 100%; position: absolute; z-index: 10; height: 100%; transition: 0.3s; }
-            .sidebar.hidden { transform: translateX(-100%); }
-            .chat-area { width: 100%; }
+            .sidebar { width: 100%; }
+            .chat-area { display: none; width: 100%; position: fixed; inset: 0; z-index: 200; }
+            .chat-area.active { display: flex; }
+            #back-btn { display: block !important; }
         }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <div class="neon-box">
-            <h2 style="color:white; margin-bottom:20px;">SYSTEM ACCESS</h2>
-            <div id="recaptcha-container"></div>
-            <div id="step-phone">
-                <input type="tel" id="phone-in" placeholder="+91 99999 99999">
-                <button onclick="sendOTP()">SEND CODE</button>
-            </div>
-            <div id="step-otp" style="display:none;">
-                <input type="text" id="otp-in" placeholder="Enter 6-digit Code">
-                <button onclick="verifyOTP()">AUTHENTICATE</button>
-            </div>
+    <div id="login-view">
+        <div class="login-card">
+            <h2 style="color: #075e54; margin-bottom: 10px;">TrueChats</h2>
+            <p style="color: #666; font-size: 14px;">Secure & Free Messaging</p>
+            
+            <button class="google-btn" onclick="googleLogin()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                Continue with Google
+            </button>
         </div>
     </div>
 
-    <div id="app-screen" style="display:none;">
+    <div id="app-root" style="display:none;">
         
         <div class="sidebar" id="sidebar">
-            <div class="header">
-                <div class="logo">TRUENET <span style="font-size:10px; opacity:0.7;">SECURE</span></div>
-                <i class="ri-user-add-line" style="font-size:20px; cursor:pointer;" onclick="addContactPrompt()"></i>
+            <div class="main-header">
+                <div class="user-profile">
+                    <img id="my-pic" class="my-avatar" src="">
+                    <span id="my-name" style="font-weight:bold;">User</span>
+                </div>
+                <div>
+                    <i class="ri-user-add-line" style="font-size: 20px; color: #54656f; cursor: pointer;" onclick="addContact()"></i>
+                </div>
             </div>
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('contacts')">My Contacts</button>
-                <button class="tab-btn" onclick="switchTab('locked')">Locked <i class="ri-lock-2-fill"></i></button>
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Search or start new chat">
             </div>
-            <div id="contact-list">
+            <div id="contacts-list">
                 </div>
         </div>
 
-        <div class="chat-area">
-            <div id="privacy-lock">
-                <i class="ri-lock-2-line" style="font-size: 50px; color: var(--primary); margin-bottom: 20px;"></i>
-                <h3 style="margin-bottom: 20px;">SECURE CHAT LOCKED</h3>
-                <input type="password" id="lock-pass" placeholder="Enter Passcode (1234)" style="width: 200px; text-align: center;">
-                <button onclick="unlockChat()" style="width: 200px;">UNLOCK</button>
-            </div>
-
+        <div class="chat-area" id="chat-window">
             <div class="chat-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="ri-arrow-left-line" style="display:none; cursor:pointer;" id="back-btn" onclick="toggleSidebar()"></i>
-                    <div class="avatar" id="chat-avatar">#</div>
-                    <div>
-                        <h4 id="chat-name">Select User</h4>
-                        <span id="chat-status" style="font-size:10px; color:var(--primary);">Encrypted</span>
-                    </div>
-                </div>
-                <div style="display:flex; gap:20px;">
-                    <i class="ri-shield-key-line" onclick="enableLock()" title="Lock Chat" style="cursor:pointer;"></i>
-                    <i class="ri-phone-line" style="cursor:pointer;" onclick="startCall()"></i>
-                    <i class="ri-vidicon-line" style="cursor:pointer;"></i>
+                <i class="ri-arrow-left-line" id="back-btn" style="display:none; font-size:24px; cursor:pointer;" onclick="closeChat()"></i>
+                <img id="chat-pic" class="my-avatar" src="">
+                <div style="flex:1;">
+                    <h4 id="chat-name" style="margin:0;">User</h4>
+                    <p style="margin:0; font-size:12px; color:#666;">online</p>
                 </div>
             </div>
 
-            <div id="messages-container"></div>
+            <div class="messages-container" id="messages-box"></div>
 
             <div class="input-area">
-                <i class="ri-attachment-line" style="font-size:20px; cursor:pointer;"></i>
-                <input type="text" id="msg-input" placeholder="Type encrypted message...">
-                <button style="width:50px; border-radius:50%;" onclick="sendMessage()"><i class="ri-send-plane-fill"></i></button>
+                <i class="ri-emotion-line" style="font-size:24px; color:#54656f;"></i>
+                <input type="text" id="msg-input" class="msg-input" placeholder="Type a message">
+                <i class="ri-send-plane-fill" style="font-size:24px; color:#54656f; cursor:pointer;" onclick="sendMessage()"></i>
             </div>
         </div>
+
     </div>
 
     <script>
         // --- CONFIGURATION ---
-        // Replace with your keys from
         const firebaseConfig = {
             apiKey: "AIzaSyCAsCm1YcsAjHwyvIzxyMrBmZPLw2hlo18",
             authDomain: "truechats-8dac9.firebaseapp.com",
@@ -176,143 +135,117 @@
             appId: "1:685374771914:web:81bf491264c1bb09061a33"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
         const auth = firebase.auth();
+        const db = firebase.firestore();
 
         let currentUser = null;
         let currentChatUser = null;
-        let isChatLocked = false;
 
-        // --- AUTHENTICATION (Real OTP) ---
-        window.onload = () => {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'invisible'
-            });
-            
-            // Check if already logged in
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('app-screen').style.display = 'flex';
-                    loadContacts();
-                    saveUserToDB(user);
-                }
-            });
-        };
-
-        function sendOTP() {
-            const phoneNumber = document.getElementById('phone-in').value;
-            auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
-                .then((confirmationResult) => {
-                    window.confirmationResult = confirmationResult;
-                    document.getElementById('step-phone').style.display = 'none';
-                    document.getElementById('step-otp').style.display = 'block';
-                    alert("OTP Sent to " + phoneNumber);
-                }).catch((error) => {
-                    alert("Error: " + error.message);
-                });
+        // --- 1. GOOGLE LOGIN ---
+        function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(err => alert("Login Failed: " + err.message));
         }
 
-        function verifyOTP() {
-            const code = document.getElementById('otp-in').value;
-            window.confirmationResult.confirm(code).then((result) => {
-                // User signed in successfully.
-            }).catch((error) => {
-                alert("Invalid OTP");
-            });
-        }
+        // --- 2. PERSISTENCE & DATA SAVING ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('app-root').style.display = 'flex';
+                
+                // Set UI Details
+                document.getElementById('my-name').innerText = user.displayName;
+                document.getElementById('my-pic').src = user.photoURL;
 
-        async function saveUserToDB(user) {
-            await db.collection('users').doc(user.phoneNumber).set({
-                phone: user.phoneNumber,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        }
+                // Save User to Firestore (Email as ID)
+                db.collection('users').doc(user.email).set({
+                    name: user.displayName,
+                    email: user.email,
+                    photo: user.photoURL,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
 
-        // --- CONTACTS & CHAT ---
-        function addContactPrompt() {
-            const number = prompt("Enter Phone Number (+91...):");
-            if(number) {
-                // In a real app, you'd verify if user exists. Here we just add to local UI for demo
-                saveContact(number);
+                loadContacts();
             }
-        }
+        });
 
-        function saveContact(phone) {
-            // Save to 'contacts' subcollection of current user
-            db.collection('users').doc(currentUser.phoneNumber).collection('myContacts').doc(phone).set({
-                phone: phone,
-                name: "User " + phone.slice(-4)
-            });
+        // --- 3. CONTACTS (By Email) ---
+        function addContact() {
+            const email = prompt("Enter friend's Gmail address:");
+            if(email && email.includes('@')) {
+                // Save contact
+                db.collection('users').doc(currentUser.email).collection('contacts').doc(email).set({
+                    email: email,
+                    savedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
         }
 
         function loadContacts() {
-            db.collection('users').doc(currentUser.phoneNumber).collection('myContacts')
-                .onSnapshot(snapshot => {
-                    const list = document.getElementById('contact-list');
-                    list.innerHTML = "";
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const div = document.createElement('div');
-                        div.className = 'contact-card';
-                        div.innerHTML = `
-                            <div class="avatar">${data.name[0]}</div>
-                            <div>
-                                <div style="font-weight:bold;">${data.name}</div>
-                                <div style="font-size:12px; opacity:0.6;">${data.phone}</div>
-                            </div>
-                        `;
-                        div.onclick = () => openChat(data);
-                        list.appendChild(div);
-                    });
+            db.collection('users').doc(currentUser.email).collection('contacts').onSnapshot(snap => {
+                const list = document.getElementById('contacts-list');
+                list.innerHTML = "";
+                snap.forEach(async doc => {
+                    const email = doc.id;
+                    // Fetch friend's details (Name & Photo) from 'users' collection
+                    const friendDoc = await db.collection('users').doc(email).get();
+                    let name = email; 
+                    let photo = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+                    if(friendDoc.exists) {
+                        name = friendDoc.data().name;
+                        photo = friendDoc.data().photo;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'contact-item';
+                    div.innerHTML = `
+                        <img src="${photo}" class="my-avatar">
+                        <div class="contact-info">
+                            <h4>${name}</h4>
+                            <p>${email}</p>
+                        </div>
+                    `;
+                    div.onclick = () => openChat({ name, email, photo });
+                    list.appendChild(div);
                 });
+            });
         }
 
-        function openChat(contactData) {
-            currentChatUser = contactData;
-            document.getElementById('chat-name').innerText = contactData.name;
-            document.getElementById('chat-avatar').innerText = contactData.name[0];
+        // --- 4. MESSAGING ---
+        let unsubscribeMsg = null;
+
+        function openChat(user) {
+            currentChatUser = user;
+            document.getElementById('chat-name').innerText = user.name;
+            document.getElementById('chat-pic').src = user.photo;
             
-            // Check privacy lock
-            const lockedChats = JSON.parse(localStorage.getItem('lockedChats') || "[]");
-            if(lockedChats.includes(contactData.phone)) {
-                document.getElementById('privacy-lock').style.display = 'flex';
-                isChatLocked = true;
-            } else {
-                document.getElementById('privacy-lock').style.display = 'none';
-                loadMessages(contactData.phone);
-                isChatLocked = false;
-            }
-
+            // Mobile UI
             if(window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.add('hidden');
-                document.getElementById('back-btn').style.display = 'block';
+                document.getElementById('chat-window').classList.add('active');
             }
-        }
 
-        // --- MESSAGING (Real-time Firestore) ---
-        let msgUnsubscribe;
+            // Load Messages
+            const chatId = [currentUser.email, user.email].sort().join("_");
+            if(unsubscribeMsg) unsubscribeMsg();
 
-        function loadMessages(targetPhone) {
-            const chatId = [currentUser.phoneNumber, targetPhone].sort().join("_");
-            document.getElementById('messages-container').innerHTML = ""; // Clear old
-
-            if(msgUnsubscribe) msgUnsubscribe();
-
-            msgUnsubscribe = db.collection('chats').doc(chatId).collection('messages')
+            unsubscribeMsg = db.collection('chats').doc(chatId).collection('messages')
                 .orderBy('timestamp')
-                .onSnapshot(snapshot => {
-                    const container = document.getElementById('messages-container');
-                    container.innerHTML = "";
-                    snapshot.forEach(doc => {
+                .onSnapshot(snap => {
+                    const box = document.getElementById('messages-box');
+                    box.innerHTML = "";
+                    snap.forEach(doc => {
                         const data = doc.data();
                         const div = document.createElement('div');
-                        div.className = data.sender === currentUser.phoneNumber ? 'msg sent' : 'msg received';
-                        div.innerText = data.text;
-                        container.appendChild(div);
+                        div.className = `message-bubble ${data.sender === currentUser.email ? 'sent' : 'received'}`;
+                        div.innerHTML = `
+                            ${data.text}
+                            <div class="msg-time">${data.time || ''}</div>
+                        `;
+                        box.appendChild(div);
                     });
-                    container.scrollTop = container.scrollHeight;
+                    box.scrollTop = box.scrollHeight;
                 });
         }
 
@@ -321,50 +254,22 @@
             const text = input.value;
             if(!text || !currentChatUser) return;
 
-            const chatId = [currentUser.phoneNumber, currentChatUser.phone].sort().join("_");
-            
+            const chatId = [currentUser.email, currentChatUser.email].sort().join("_");
+            const now = new Date();
+            const timeString = now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0');
+
             db.collection('chats').doc(chatId).collection('messages').add({
                 text: text,
-                sender: currentUser.phoneNumber,
-                receiver: currentChatUser.phone,
+                sender: currentUser.email,
+                receiver: currentChatUser.email,
+                time: timeString,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             input.value = "";
         }
 
-        // --- PRIVACY FEATURES ---
-        function enableLock() {
-            if(!currentChatUser) return;
-            const lockedChats = JSON.parse(localStorage.getItem('lockedChats') || "[]");
-            if(!lockedChats.includes(currentChatUser.phone)) {
-                lockedChats.push(currentChatUser.phone);
-                localStorage.setItem('lockedChats', JSON.stringify(lockedChats));
-                alert("Chat Locked! You will need passcode '1234' to open.");
-            } else {
-                alert("Chat is already locked.");
-            }
-        }
-
-        function unlockChat() {
-            const pass = document.getElementById('lock-pass').value;
-            if(pass === "1234") { // Simple PIN logic
-                document.getElementById('privacy-lock').style.display = 'none';
-                document.getElementById('lock-pass').value = "";
-                loadMessages(currentChatUser.phone);
-            } else {
-                alert("Access Denied");
-            }
-        }
-
-        // --- UI UTILS ---
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.remove('hidden');
-            document.getElementById('back-btn').style.display = 'none';
-        }
-
-        function startCall() {
-            alert("Secure Voice Line: Establishing connection to " + currentChatUser.phone + "...");
-            // WebRTC Logic would go here
+        function closeChat() {
+            document.getElementById('chat-window').classList.remove('active');
         }
     </script>
 </body>
