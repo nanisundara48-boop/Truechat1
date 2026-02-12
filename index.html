@@ -11,105 +11,123 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
-        :root { --primary: #00a884; --bg: #efeae2; --header: #f0f2f5; --incoming: #ffffff; --outgoing: #d9fdd3; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #d1d7db; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
+        :root { --primary: #00f2ff; --bg: #050510; --glass: rgba(255, 255, 255, 0.05); --border: rgba(255, 255, 255, 0.1); --text: #e0e0e0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-        #app-root { width: 100%; height: 100%; background: white; display: flex; position: relative; }
-
-        /* NC Logo Animation */
+        /* NC Loader Animation */
         .nc-loader {
-            width: 80px; height: 80px; background: var(--primary); color: white;
+            width: 80px; height: 80px; background: var(--primary); color: #000;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 32px; font-weight: bold; margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(0, 168, 132, 0.4);
-            animation: pulse 2s infinite;
+            font-size: 32px; font-weight: bold; box-shadow: 0 0 20px var(--primary);
+            animation: pulse 1.5s infinite ease-in-out;
         }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
 
-        /* Login Screen */
-        #login-view { position: fixed; inset: 0; background: #f0f2f5; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; border-top: 5px solid var(--primary); }
-        .google-btn { background: #fff; border: 1px solid #ddd; padding: 12px; width: 100%; border-radius: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-weight: bold; color: #555; margin-top: 20px; }
+        /* Screens */
+        .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1a1a2e, #000); z-index: 1000; }
+        #app-root { display: none; height: 100%; width: 100%; position: relative; background: var(--bg); }
 
-        /* Sidebar & Chat Styles */
-        .sidebar { width: 35%; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; background: white; min-width: 300px; }
-        .main-header { background: var(--header); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; height: 60px; }
-        .contact-item { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
-        .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
-        .message-bubble { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14.2px; margin-bottom: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .sent { align-self: flex-end; background: var(--outgoing); }
-        .received { align-self: flex-start; background: var(--incoming); }
+        /* Sidebar & Contacts */
+        .sidebar { width: 350px; border-right: 1px solid var(--border); background: rgba(10, 10, 20, 0.95); display: flex; flex-direction: column; }
+        .header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .contact-card { padding: 15px; margin: 5px 10px; background: var(--glass); border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 15px; border: 1px solid transparent; transition: 0.3s; }
+        .contact-card:hover { border-color: var(--primary); background: rgba(0, 242, 255, 0.1); }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
 
-        /* Call Overlay */
-        #call-screen { position: fixed; inset: 0; background: rgba(0, 128, 105, 0.95); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .end-call { background: #ea0038; border: none; padding: 15px; border-radius: 50%; color: white; font-size: 24px; cursor: pointer; margin-top: 30px; }
+        /* Chat Area */
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; background-color: #050510; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 14px; position: relative; backdrop-filter: blur(5px); }
+        .sent { align-self: flex-end; background: linear-gradient(135deg, #0066ff, #00f2ff); color: #000; border-bottom-right-radius: 2px; }
+        .received { align-self: flex-start; background: var(--glass); color: #fff; border-bottom-left-radius: 2px; border: 1px solid var(--border); }
 
-        @media (max-width: 768px) { .sidebar { width: 100%; } .chat-area { display: none; width: 100%; position: absolute; height: 100%; z-index: 100; } .chat-area.active { display: flex; } }
+        /* Input Bar */
+        .input-bar { padding: 15px; background: rgba(0,0,0,0.8); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); }
+        input { flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; border-radius: 25px; outline: none; }
+        .icon-btn { font-size: 24px; color: var(--primary); cursor: pointer; transition: 0.2s; }
+        .icon-btn:hover { transform: scale(1.1); }
+
+        /* Privacy Lock */
+        #privacy-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* Calling UI */
+        #call-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+
+        @media (max-width: 768px) { .sidebar { width: 100%; position: absolute; z-index: 10; height: 100%; } .sidebar.hidden { display: none; } .chat-main { width: 100%; } }
     </style>
 </head>
 <body>
 
-    <div id="login-view">
-        <div class="login-card">
-            <div style="display: flex; justify-content: center;"><div class="nc-loader">NC</div></div>
-            <h2>TrueChats Elite</h2>
-            <button class="google-btn" onclick="googleLogin()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Continue with Google
-            </button>
-        </div>
+    <div id="login-view" class="screen">
+        <div class="nc-loader">NC</div>
+        <h2 style="margin: 20px 0;">TRUECHATS ELITE</h2>
+        <button onclick="googleLogin()" style="padding: 12px 25px; background: var(--primary); border: none; border-radius: 5px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+            <i class="ri-google-fill"></i> CONTINUE WITH GOOGLE
+        </button>
     </div>
 
-    <div id="app-root" style="display:none;">
+    <div id="app-root">
         <div class="sidebar" id="sidebar">
-            <div class="main-header">
-                <img id="my-pic" style="width:40px; height:40px; border-radius:50%;" src="">
-                <div style="display:flex; gap:20px;">
-                    <i class="ri-user-add-line" style="font-size:22px; cursor:pointer;" onclick="addContact()"></i>
-                    <i class="ri-logout-box-r-line" style="font-size:22px; cursor:pointer;" onclick="logout()"></i>
+            <div class="header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img id="my-pic" class="avatar" src="">
+                    <span id="my-name">...</span>
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <i class="ri-user-add-line icon-btn" onclick="addContact()"></i>
+                    <i class="ri-logout-box-line icon-btn" onclick="logout()"></i>
                 </div>
             </div>
-            <div id="contacts-list" style="flex:1; overflow-y:auto;"></div>
+            <div id="contact-list" style="flex:1; overflow-y:auto; padding-top:10px;"></div>
         </div>
 
-        <div class="chat-area" id="chat-window">
-            <div id="welcome-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#888;">
-                <div class="nc-loader" style="opacity:0.3;">NC</div>
-                <h2>Secure Connection Active</h2>
-                <p>Select a contact to start encrypted messaging.</p>
+        <div class="chat-main" id="chat-window">
+            <div id="privacy-overlay">
+                <i class="ri-lock-password-line" style="font-size: 50px; color: var(--primary);"></i>
+                <h3 style="margin: 20px;">CHAT SECURED</h3>
+                <input type="password" id="lock-pin" placeholder="Enter PIN (Default: 1234)" style="max-width: 200px; text-align: center;">
+                <button onclick="unlockChat()" style="margin-top:15px; padding:10px 30px; background:var(--primary); border:none; border-radius:5px;">UNLOCK</button>
             </div>
 
-            <div id="active-chat" style="display:none; flex-direction:column; height:100%;">
-                <div class="main-header" style="background:#f0f2f5; border-bottom:1px solid #ddd;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <i class="ri-arrow-left-line" onclick="closeChat()" style="font-size:24px; cursor:pointer;"></i>
-                        <img id="chat-pic" style="width:40px; height:40px; border-radius:50%;" src="">
-                        <h4 id="chat-name">User</h4>
-                    </div>
-                    <div style="display:flex; gap:20px;">
-                        <i class="ri-phone-line" style="font-size:22px; cursor:pointer;" onclick="startCall('voice')"></i>
-                        <i class="ri-vidicon-line" style="font-size:22px; cursor:pointer;" onclick="startCall('video')"></i>
-                    </div>
+            <div class="header" id="chat-header" style="background: rgba(0,0,0,0.8); display:none;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="ri-arrow-left-line icon-btn" id="back-btn" style="display:none;" onclick="toggleSidebar()"></i>
+                    <img id="chat-pic" class="avatar" src="">
+                    <h4 id="chat-name">User</h4>
                 </div>
-                <div class="messages-container" id="messages-box"></div>
-                <div style="padding:10px; background:#f0f2f5; display:flex; gap:10px;">
-                    <input type="text" id="msg-input" style="flex:1; padding:12px; border:none; border-radius:8px;" placeholder="Type a message">
-                    <button onclick="sendMessage()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:5px;">Send</button>
+                <div style="display:flex; gap:20px;">
+                    <i class="ri-shield-keyhole-line icon-btn" onclick="lockCurrentChat()"></i>
+                    <i class="ri-phone-line icon-btn" onclick="startCall('voice')"></i>
+                    <i class="ri-vidicon-line icon-btn" onclick="startCall('video')"></i>
                 </div>
+            </div>
+
+            <div class="messages" id="msg-box">
+                <div style="margin:auto; text-align:center; opacity:0.5;">
+                    <div class="nc-loader" style="width:50px; height:50px; font-size:18px; margin: 0 auto 15px auto; opacity:0.2;">NC</div>
+                    <p>Select a contact to begin encrypted transmission</p>
+                </div>
+            </div>
+
+            <div class="input-bar" id="input-bar" style="display:none;">
+                <i class="ri-add-line icon-btn"></i>
+                <input type="text" id="msg-input" placeholder="Enter encrypted text..." onkeypress="if(event.key==='Enter')sendMsg()">
+                <i class="ri-send-plane-2-fill icon-btn" onclick="sendMsg()"></i>
             </div>
         </div>
     </div>
 
     <div id="call-screen">
         <div class="nc-loader">NC</div>
-        <h2 id="call-status">Calling...</h2>
+        <h2 id="call-status" style="margin-top:20px;">Connecting...</h2>
         <audio id="remote-audio" autoplay></audio>
-        <video id="remote-video" autoplay style="width: 80%; max-width: 400px; display: none;"></video>
-        <button class="end-call" onclick="endCall()"><i class="ri-phone-fill"></i></button>
+        <video id="remote-video" autoplay style="width: 80%; max-width: 500px; border-radius: 10px; margin-top:20px; display:none;"></video>
+        <button onclick="endCall()" style="margin-top:40px; background:#ff4b2b; color:white; border:none; padding:15px 30px; border-radius:50px; font-weight:bold; cursor:pointer;">END CALL</button>
     </div>
 
     <script>
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCAsCm1YcsAjHwyvIzxyMrBmZPLw2hlo18",
             authDomain: "truechats-8dac9.firebaseapp.com",
@@ -122,9 +140,10 @@
 
         let currentUser = null, currentChatUser = null, peer = null, unsub = null;
 
+        // --- AUTH LOGIC ---
         function googleLogin() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider);
+            auth.signInWithRedirect(provider); // Mobile stability కోసం Redirect
         }
 
         auth.onAuthStateChanged(user => {
@@ -133,9 +152,11 @@
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('app-root').style.display = 'flex';
                 document.getElementById('my-pic').src = user.photoURL;
+                document.getElementById('my-name').innerText = user.displayName;
 
+                // User data sync
                 db.collection('users').doc(user.email).set({
-                    name: user.displayName, email: user.email, photo: user.photoURL, online: true
+                    name: user.displayName, email: user.email, photo: user.photoURL, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
                 initPeer();
@@ -143,43 +164,42 @@
             }
         });
 
+        // --- PEERJS FOR CALLS ---
         function initPeer() {
-            // Peer ID ni email nundi sanitise chesthunnam (no @ or dots)
-            const peerId = currentUser.email.replace(/[^a-zA-Z0-9]/g, "");
-            peer = new Peer(peerId);
-            
+            const safeId = currentUser.email.replace(/[^a-zA-Z0-9]/g, "");
+            peer = new Peer(safeId);
             peer.on('call', call => {
-                if(confirm("Incoming call from " + call.peer)) {
-                    navigator.mediaDevices.getUserMedia({audio:true, video:false}).then(stream => {
-                        call.answer(stream);
-                        showCallUI("Call Active");
+                if(confirm("Incoming call...")) {
+                    navigator.mediaDevices.getUserMedia({audio:true, video:false}).then(s => {
+                        call.answer(s);
+                        document.getElementById('call-screen').style.display = 'flex';
                         call.on('stream', rs => { document.getElementById('remote-audio').srcObject = rs; });
                     });
                 }
             });
         }
 
+        // --- CONTACTS & MESSAGING ---
         function addContact() {
-            const email = prompt("Enter friend's Gmail:");
-            if(email) {
-                db.collection('users').doc(currentUser.email).collection('contacts').doc(email).set({ email });
+            const email = prompt("Enter friend's Gmail address:");
+            if(email && email.includes('@')) {
+                db.collection('users').doc(currentUser.email).collection('myContacts').doc(email).set({ email });
             }
         }
 
         function loadContacts() {
-            db.collection('users').doc(currentUser.email).collection('contacts').onSnapshot(snap => {
-                const list = document.getElementById('contacts-list');
+            db.collection('users').doc(currentUser.email).collection('myContacts').onSnapshot(snap => {
+                const list = document.getElementById('contact-list');
                 list.innerHTML = "";
                 snap.forEach(async d => {
-                    const email = d.id;
-                    const userDoc = await db.collection('users').doc(email).get();
-                    if(userDoc.exists) {
-                        const u = userDoc.data();
-                        const div = document.createElement('div');
-                        div.className = 'contact-item';
-                        div.innerHTML = `<img src="${u.photo}" style="width:40px; height:40px; border-radius:50%;"><div><b>${u.name}</b><br><small>${u.email}</small></div>`;
-                        div.onclick = () => openChat(u);
-                        list.appendChild(div);
+                    const uDoc = await db.collection('users').doc(d.id).get();
+                    if(uDoc.exists) {
+                        const u = uDoc.data();
+                        const card = document.createElement('div');
+                        card.className = 'contact-card';
+                        card.innerHTML = `<img src="${u.photo}" class="avatar"><div><b>${u.name}</b><br><small style="opacity:0.6">${u.email}</small></div>`;
+                        card.onclick = () => openChat(u);
+                        list.appendChild(card);
                     }
                 });
             });
@@ -187,30 +207,45 @@
 
         function openChat(user) {
             currentChatUser = user;
-            document.getElementById('welcome-screen').style.display = 'none';
-            document.getElementById('active-chat').style.display = 'flex';
+            document.getElementById('chat-header').style.display = 'flex';
+            document.getElementById('input-bar').style.display = 'flex';
             document.getElementById('chat-name').innerText = user.name;
             document.getElementById('chat-pic').src = user.photo;
-            if(window.innerWidth < 768) document.getElementById('chat-window').classList.add('active');
+            
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('back-btn').style.display = 'block';
+            }
 
+            // Chat Lock Check
+            const locked = JSON.parse(localStorage.getItem('lockedChats') || "[]");
+            if(locked.includes(user.email)) {
+                document.getElementById('privacy-overlay').style.display = 'flex';
+            } else {
+                startChatSync(user.email);
+            }
+        }
+
+        function startChatSync(targetEmail) {
+            document.getElementById('privacy-overlay').style.display = 'none';
             if(unsub) unsub();
-            const chatId = [currentUser.email, user.email].sort().join("_");
+            const chatId = [currentUser.email, targetEmail].sort().join("_");
             unsub = db.collection('chats').doc(chatId).collection('messages').orderBy('ts')
                 .onSnapshot(snap => {
-                    const box = document.getElementById('messages-box');
+                    const box = document.getElementById('msg-box');
                     box.innerHTML = "";
                     snap.forEach(m => {
                         const data = m.data();
-                        const d = document.createElement('div');
-                        d.className = `message-bubble ${data.from === currentUser.email ? 'sent' : 'received'}`;
-                        d.innerText = data.text;
-                        box.appendChild(d);
+                        const div = document.createElement('div');
+                        div.className = `msg ${data.from === currentUser.email ? 'sent' : 'received'}`;
+                        div.innerText = data.text;
+                        box.appendChild(div);
                     });
                     box.scrollTop = box.scrollHeight;
                 });
         }
 
-        function sendMessage() {
+        function sendMsg() {
             const inp = document.getElementById('msg-input');
             if(!inp.value || !currentChatUser) return;
             const chatId = [currentUser.email, currentChatUser.email].sort().join("_");
@@ -220,29 +255,40 @@
             inp.value = "";
         }
 
+        // --- PRIVACY & CALLS ---
+        function lockCurrentChat() {
+            const locked = JSON.parse(localStorage.getItem('lockedChats') || "[]");
+            if(!locked.includes(currentChatUser.email)) {
+                locked.push(currentChatUser.email);
+                localStorage.setItem('lockedChats', JSON.stringify(locked));
+                alert("Chat Locked with PIN 1234");
+                openChat(currentChatUser);
+            }
+        }
+
+        function unlockChat() {
+            if(document.getElementById('lock-pin').value === "1234") {
+                startChatSync(currentChatUser.email);
+            } else { alert("Access Denied"); }
+        }
+
         function startCall(type) {
-            const targetPeerId = currentChatUser.email.replace(/[^a-zA-Z0-9]/g, "");
-            navigator.mediaDevices.getUserMedia({audio:true, video: type === 'video'}).then(stream => {
-                const call = peer.call(targetPeerId, stream);
-                showCallUI("Calling " + currentChatUser.name + "...");
+            const targetId = currentChatUser.email.replace(/[^a-zA-Z0-9]/g, "");
+            navigator.mediaDevices.getUserMedia({audio:true, video: type==='video'}).then(s => {
+                const call = peer.call(targetId, s);
+                document.getElementById('call-screen').style.display = 'flex';
                 call.on('stream', rs => {
-                    if(type === 'video') {
+                    if(type==='video') { 
                         document.getElementById('remote-video').srcObject = rs;
                         document.getElementById('remote-video').style.display = 'block';
-                    } else {
-                        document.getElementById('remote-audio').srcObject = rs;
                     }
+                    document.getElementById('remote-audio').srcObject = rs;
                 });
             });
         }
 
-        function showCallUI(status) {
-            document.getElementById('call-status').innerText = status;
-            document.getElementById('call-screen').style.display = 'flex';
-        }
-
+        function toggleSidebar() { document.getElementById('sidebar').classList.remove('hidden'); }
         function endCall() { location.reload(); }
-        function closeChat() { document.getElementById('chat-window').classList.remove('active'); }
         function logout() { auth.signOut().then(() => location.reload()); }
     </script>
 </body>
